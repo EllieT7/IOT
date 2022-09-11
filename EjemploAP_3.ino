@@ -7,6 +7,20 @@ WiFiServer server(80);
 #include "BluetoothSerial.h"
 BluetoothSerial SerialBT;
 
+// Constantes
+#define PWM1_Ch    0
+#define PWM1_Res   8
+#define PWM1_Freq  1000
+#define PWM2_Ch    1
+#define PWM2_Res   8
+#define PWM2_Freq  1000
+#define PWM3_Ch    2
+#define PWM3_Res   8
+#define PWM3_Freq  1000
+int pwm1=0,pwm2=0,pwm3=0;
+bool modoRGB = false;
+
+
 // Variable to store the HTTP request
 String header; // Cabecera tipo String
 // Variables auxiliares del estado de las salidas, para el pin
@@ -19,54 +33,80 @@ const int ROJO = 22;
 const int VERDE = 23;
 // Contador 
 int contador = 0;
+int aux = 0;
 void setup() {
   Serial.begin(115200);
-  pinMode(AZUL, OUTPUT);   pinMode(VERDE, OUTPUT);     pinMode(ROJO, OUTPUT);
-  // Set outputs to LOW
-  digitalWrite(AZUL, LOW);    digitalWrite(VERDE, LOW);   digitalWrite(ROJO, LOW);
+  configPWM(); //Configurando PWM 
   ConnectWiFi_AP();
   server.begin();
   SerialBT.begin("NaoMica"); //Bluetooth nombre dispositivo
   Serial.println("Dispositivo ESPBluetooth iniciado");
 }
 void loop(){
+  //Configuracion canal pwm
+  ledcWrite(PWM1_Ch, pwm1);
+  ledcWrite(PWM2_Ch, pwm2);
+  ledcWrite(PWM3_Ch, pwm3);
+ 
   //Bluetooth
   if (Serial.available()){
-    SerialBT.write(Serial.read());
+    String mensaje = Serial.readStringUntil('\n');
+    //SerialBT.write(Serial.read()); 
+    Serial.println(aux);
+    Serial.println(mensaje);
+    if(mensaje=="rgb" && aux==0){
+      aux = 1;
+      modoRGB = true;
+      Serial.println("Ingrese los valores rgb (ej: 97 97 97)");
+    }else{
+      aux=0;      
+      int r = split(mensaje,' ',0).toInt();
+      int g = split(mensaje,' ',1).toInt();
+      int b = split(mensaje,' ',2).toInt();
+      cambiarColor(r,g,b);
+      Serial.println("Se configuro "+mensaje);
+    }
   }
   if (SerialBT.available()){
     String command = "";
     command = SerialBT.readStringUntil('\n'); // Obteniendo string del Bluetooth
+    Serial.println("Mensaje recibido BT: " + command);
     // LED 1
     if (command.indexOf("azul on")>=0){
       SerialBT.println("GPIO 21 on");
       AZULState = "on";
-      digitalWrite(AZUL, HIGH);
+      //digitalWrite(AZUL, HIGH);
+      cambiarColor(pwm3,pwm2,255);
       contador++;
     } else if (command.indexOf("azul off")>=0){
       SerialBT.println("GPIO 21 off");
       AZULState = "off";
-      digitalWrite(AZUL, LOW);
+      //digitalWrite(AZUL, LOW);
+      cambiarColor(pwm3,pwm2,0);
       contador++;
     } else if (command.indexOf("verde on")>=0){
       SerialBT.println("GPIO 22 on");
       VERDEState = "on";
-      digitalWrite(VERDE, HIGH);
+      //digitalWrite(VERDE, HIGH);
+      cambiarColor(pwm3,255,pwm1);
       contador++;
     } else if (command.indexOf("verde off")>=0){
       SerialBT.println("GPIO 22 off");
       VERDEState = "off";
-      digitalWrite(VERDE, LOW);
+      //digitalWrite(VERDE, LOW);
+      cambiarColor(pwm3,0,pwm1);
       contador--;
     } else if (command.indexOf("rojo on")>=0){
       SerialBT.println("GPIO 23 on");
       ROJOState = "on";
-      digitalWrite(ROJO, HIGH);
+      //digitalWrite(ROJO, HIGH);
+      cambiarColor(255,pwm2,pwm1);
       contador++;
     } else if (command.indexOf("rojo off")>=0){
       SerialBT.println("GPIO 23 off");
       ROJOState = "off";
-      digitalWrite(ROJO, LOW);
+      //digitalWrite(ROJO, LOW);
+      cambiarColor(0,pwm2,pwm1);
       contador--;
     } else {
       SerialBT.println("Comando no reconocido");
@@ -98,32 +138,38 @@ void loop(){
             if (header.indexOf("GET /21/on") >= 0) {
               Serial.println("GPIO 21 on");
               AZULState = "on";
-              digitalWrite(AZUL, HIGH);
+              //digitalWrite(AZUL, HIGH);
+              cambiarColor(pwm3,pwm2,255);
               contador++;
             } else if (header.indexOf("GET /21/off") >= 0) {
               Serial.println("GPIO 21 off");
               AZULState = "off";
-              digitalWrite(AZUL, LOW);
+              //digitalWrite(AZUL, LOW);
+              cambiarColor(pwm3,pwm2,0);
               contador--;
             } else if (header.indexOf("GET /22/on") >= 0) {
               Serial.println("GPIO 22 on");
               VERDEState = "on";
-              digitalWrite(VERDE, HIGH);
+              //digitalWrite(VERDE, HIGH);
+              cambiarColor(pwm3,255,pwm1);
               contador++;
             } else if (header.indexOf("GET /22/off") >= 0) {
               Serial.println("GPIO 22 off");
               VERDEState = "off";
-              digitalWrite(VERDE, LOW);
+              //digitalWrite(VERDE, LOW);
+              cambiarColor(pwm3,0,pwm1);
               contador--;
             }  else if (header.indexOf("GET /23/on") >= 0) {
               Serial.println("GPIO 23 on");
               ROJOState = "on";
-              digitalWrite(ROJO, HIGH);
+              //digitalWrite(ROJO, HIGH);
+              cambiarColor(255,pwm2,pwm1);
               contador++;
             } else if (header.indexOf("GET /23/off") >= 0) {
               Serial.println("GPIO 23 off");
               ROJOState = "off";
-              digitalWrite(ROJO, LOW);
+              //digitalWrite(ROJO, LOW);
+              cambiarColor(0,pwm2,pwm1);
               contador--;
             }
 
@@ -173,4 +219,61 @@ void loop(){
     Serial.println("Client disconnected.");
     Serial.println("");
   }
+}
+
+void configPWM(){
+  ledcAttachPin(AZUL, PWM1_Ch);
+  ledcSetup(PWM1_Ch, PWM1_Freq, PWM1_Res);
+
+  ledcAttachPin(VERDE, PWM2_Ch);
+  ledcSetup(PWM2_Ch, PWM2_Freq, PWM2_Res);
+
+  ledcAttachPin(ROJO, PWM3_Ch);
+  ledcSetup(PWM3_Ch, PWM3_Freq, PWM3_Res);
+}
+
+String split(String data, char separator, int index){
+  int found = 0;
+  int strIndex[] = {0, -1};
+  int maxIndex = data.length()-1;
+
+  for(int i=0; i<=maxIndex && found<=index; i++){
+    if(data.charAt(i)==separator || i==maxIndex){
+        found++;
+        strIndex[0] = strIndex[1]+1;
+        strIndex[1] = (i == maxIndex) ? i+1 : i;
+    }
+  }
+
+  return found>index ? data.substring(strIndex[0], strIndex[1]) : "";
+}
+
+void cambiarColor(int r, int g, int b){
+  if(r>=0&&r<=255 && r>=0&&r<=255 && r>=0&&r<=255){
+    if(r>0){
+      ROJOState = "on";
+    }else{
+      ROJOState = "off";
+    }
+
+    if(g>0){
+      VERDEState = "on";
+    }else{
+      VERDEState = "off";
+    }
+
+    if(b>0){
+      AZULState = "on";
+    }else{
+      AZULState = "off";
+    }
+    pwm1=b;
+    pwm2=g;
+    pwm3=r;
+  }else{
+    Serial.println("Intente nuevamente");
+  }
+ 
+  
+
 }
