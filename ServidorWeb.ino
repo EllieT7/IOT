@@ -38,7 +38,8 @@ int contadorVerde = 255;
 int contadorRojo = 255;
 int aux = 0;
 int aux2 = 0;
-
+String direccionIP = "";
+String potencia="";
 //---------------------------------------------------------------
 // Potenciometro en el GPIO 32 (Analog ADC1_CH0) 
 const int potPin = 32; //ADC0 es el pin 32 -- Canal q vamos a usar
@@ -54,6 +55,7 @@ void setup() {
   SerialBT.begin("NaoMica"); //Bluetooth nombre dispositivo
   Serial.println("Dispositivo ESPBluetooth iniciado");
   delay(1000);
+  //direccionIP = getIP();
 }
 
 void loop(){
@@ -129,6 +131,9 @@ void loop(){
             client.println("Connection: close");
             client.println();
             // Cambiando estado de los GPIO
+            Serial.println("Header " + header);
+            direccionIP = header.substring(0, header.indexOf('/'));
+            Serial.println("Direccion "+ direccionIP);
             // LED 1
             if (header.indexOf("GET /21/on") >= 0) {
               Serial.println("GPIO 21 on");
@@ -195,16 +200,17 @@ void loop(){
             }
             
             // Página web
-            client.println("<!DOCTYPE html><html><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><link rel=\"icon\" href=\"data:,\"></head>");
-            client.println("<body style='margin: 3% 10%;'><div><h1>Lab 4: ESP32 como Servidor WEB en modo Access Point</h1></div>");
+            client.println("<!DOCTYPE html><html><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><link rel=\"icon\" href=\"data:,\"><style>button{background-color: rgb(142, 0, 185);border-radius: 8px;border: 1px #979797;color: #fff;}</style></head>");
+            client.println("<body style='margin: 3% 10%; font-family: sans-serif; background-color: #ff6c9d41;'><div><h1 style='color: #CC00CC'>Lab 4: ESP32 como Servidor WEB en modo Access Point</h1></div>");
+            client.println("<p><ul><li>Direccion IP: "+direccionIP+"</li><br><li>Potencia de la señal: "+potencia+"</li><br><li>Integrantes:<ul><li>Micaela Abigail Gordillo Alcocer</li><li>Elizabeth Naomi Tacachira Beltran</li></ul></li></ul></p>");
             client.println("<div style='grid-column-start: 1; grid-column-end: 4;'><center><p>Contador: </p>");
             client.println("<a href=\"/contador/menos\"><button class=\"button\">-</button></a>"+String(contador));
             client.println("<a href=\"/contador/mas\"><button class=\"button\">+</button></a>");
             client.println("</center></div><div style='display: grid; grid-template-columns: repeat(3, 1fr); margin: 3% 30%; text-align: center;'>");
             client.println("<div style='grid-column-start: 1; grid-column-end: 4;'><h2>LED | Controladores</h2></div>");
-            client.println("<div><p>AZUL - State " + AZULState + "</p></div>");
-            client.println("<div><p>VERDE - State " + VERDEState + "</p></div>");
-            client.println("<div><p>ROJO - State " + ROJOState + "</p></div>"); 
+            client.println("<div><p>🔵AZUL - State " + AZULState + "</p></div>");
+            client.println("<div><p>🟢VERDE - State " + VERDEState + "</p></div>");
+            client.println("<div><p>🔴ROJO - State " + ROJOState + "</p></div>"); 
             client.println("<div style='display: grid; grid-template-columns: repeat(2, 1fr);'>");  
             if (AZULState == "off") {
               client.println("<p><a href=\"/21/on\"><button class=\"button\">ON</button></a></p>");
@@ -232,7 +238,9 @@ void loop(){
             client.println("</div><div>");
             client.println("<a href=\"/rojo/menos\"><button class=\"button\">-</button></a>"+String(contadorRojo));
             client.println("<a href=\"/rojo/mas\"><button class=\"button\">+</button></a>");
-            client.println("</div></div></body></html>");          
+            client.print("</div></div><hr><center><div><h2><strong>ADC</strong></h2>Valor: "); 
+            client.print(potValue);
+            client.println("</div></center></body></html>");         
             // La respuesta HTTP termina con otra línea en blanco
             client.println();
             // Salir del bucle while
@@ -257,7 +265,7 @@ void loop(){
   // ADC
   // Leyendo valores del ADC
   potValue = analogRead(potPin);
-  Serial.println(potValue);
+  //Serial.println(potValue);
   delay(50); // Darle tiempo para ejecutar la seria
 }
 

@@ -1,11 +1,26 @@
 <!DOCTYPE html>
 <html> 
 <head>
+    <meta charset="UTF-8">
     <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"> 
     <link rel=\"icon\" href=\"data:,\"> 
+    <style>
+        button{
+            background-color: rgb(142, 0, 185);border-radius: 8px;border: 1px #979797;color: #fff;
+        }
+    </style>
 </head>
-<body style='margin: 3% 10%;'>
-    <div><h1>Lab 4: ESP32 como Servidor WEB en modo Access Point</h1></div>
+<body style="margin: 3% 10%; font-family: sans-serif; background-color: #ff6c9d41;">
+    <div><h1 style="color: #CC00CC">Lab 4: ESP32 como Servidor WEB en modo Access Point</h1></div>
+    <p><ul>
+        <li>Direccion IP:</li><br>
+        <li>Potencia de la señal:</li><br>
+        <li>Integrantes:
+            <ul><li>Micaela Abigail Gordillo Alcocer</li>
+            <li>Elizabeth Naomi Tacachira Beltran</li></ul>
+        </li>
+    </ul></p>
+
     <div style='grid-column-start: 1; grid-column-end: 4;'><center>
         <p>Contador: </p>
         <a href=\"/contador/mas\"><button class=\"button\">-</button></a>
@@ -14,9 +29,9 @@
     </center></div>
     <div style='display: grid; grid-template-columns: repeat(3, 1fr); margin: 3% 30%; text-align: center;'>
         <div style="grid-column-start: 1; grid-column-end: 4;"><h2>LED | Controladores</h2></div>
-        <div><p>AZUL - State </p></div> 
-        <div><p>VERDE - State </p></div>
-        <div><p>ROJO - State </p></div>
+        <div><p>🔵AZUL - State </p></div> 
+        <div><p>🟢VERDE - State </p></div>
+        <div><p>🔴ROJO - State </p></div>
         <div style='display: grid; grid-template-columns: repeat(2, 1fr);'>
             <p><a href=\"/21/on\"><button class=\"button\">ON</button></a></p> 
             <p><a href=\"/21/off\"><button class=\"button button2\">OFF</button></a></p> 
@@ -46,5 +61,9 @@
             <a href=\"/rojo/menos\"><button class=\"button\">+</button></a>
         </div>
     </div>
+    <hr>
+    <center><div><h2><strong>ADC</strong></h2>Valor: </div></center>
+    
 </body>
 </html>  
+
