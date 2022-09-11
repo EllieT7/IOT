@@ -33,12 +33,9 @@ const int ROJO = 22;
 const int VERDE = 23;
 // Contadores
 int contador = 255;
-int contadorAzul = 255;
-int contadorVerde = 255;
-int contadorRojo = 255;
 int aux = 0;
 int aux2 = 0;
-String direccionIP = "";
+IPAddress direccionIP;
 String potencia="";
 //---------------------------------------------------------------
 // Potenciometro en el GPIO 32 (Analog ADC1_CH0) 
@@ -55,7 +52,6 @@ void setup() {
   SerialBT.begin("NaoMica"); //Bluetooth nombre dispositivo
   Serial.println("Dispositivo ESPBluetooth iniciado");
   delay(1000);
-  //direccionIP = getIP();
 }
 
 void loop(){
@@ -81,9 +77,6 @@ void loop(){
       int g = split(mensaje,' ',1).toInt();
       int b = split(mensaje,' ',2).toInt();
       cambiarColor(r,g,b);
-      contadorRojo = r;
-      contadorVerde = g;
-      contadorAzul = b;
       Serial.println("Se configuro "+mensaje);
     }
   }
@@ -104,9 +97,6 @@ void loop(){
       int g = split(command,' ',1).toInt();
       int b = split(command,' ',2).toInt();
       cambiarColor(r,g,b);
-      contadorRojo = r;
-      contadorVerde = g;
-      contadorAzul = b;
       SerialBT.println("Se configuro "+command);
     }
   }
@@ -131,14 +121,14 @@ void loop(){
             client.println("Connection: close");
             client.println();
             // Cambiando estado de los GPIO
-            Serial.println("Header " + header);
-            direccionIP = header.substring(0, header.indexOf('/'));
+            //Serial.println("Header " + header);
+            //direccionIP = header.substring(0, header.indexOf('/'));
             Serial.println("Direccion "+ direccionIP);
             // LED 1
             if (header.indexOf("GET /21/on") >= 0) {
               Serial.println("GPIO 21 on");
               AZULState = "on";
-              cambiarColor(pwm3,pwm2,contadorAzul);
+              cambiarColor(pwm3,pwm2,255);
             } else if (header.indexOf("GET /21/off") >= 0) {
               Serial.println("GPIO 21 off");
               AZULState = "off";
@@ -146,7 +136,7 @@ void loop(){
             } else if (header.indexOf("GET /22/on") >= 0) {
               Serial.println("GPIO 22 on");
               VERDEState = "on";
-              cambiarColor(pwm3,contadorVerde,pwm1);
+              cambiarColor(pwm3,255,pwm1);
             } else if (header.indexOf("GET /22/off") >= 0) {
               Serial.println("GPIO 22 off");
               VERDEState = "off";
@@ -154,7 +144,7 @@ void loop(){
             }  else if (header.indexOf("GET /23/on") >= 0) {
               Serial.println("GPIO 23 on");
               ROJOState = "on";
-              cambiarColor(contadorRojo,pwm2,pwm1);
+              cambiarColor(255,pwm2,pwm1);
             } else if (header.indexOf("GET /23/off") >= 0) {
               Serial.println("GPIO 23 off");
               ROJOState = "off";
@@ -168,41 +158,45 @@ void loop(){
                 contador = contador-1;
               }
             } else if(header.indexOf("GET /azul/mas") >= 0){
-              if(contadorAzul<255){
-                contadorAzul = contadorAzul+1;
-                cambiarColor(pwm3,pwm2,contadorAzul);
+              if(pwm1<255){
+                pwm1++;
+                cambiarColor(pwm3,pwm2,pwm1);
               }
             } else if (header.indexOf("GET /azul/menos") >= 0){
-              if(contadorAzul>0){
-                contadorAzul = contadorAzul-1;
-                cambiarColor(pwm3,pwm2,contadorAzul);
+              if(pwm1>0){
+                pwm1--;
+                cambiarColor(pwm3,pwm2,pwm1);
               }
             } else if(header.indexOf("GET /verde/mas") >= 0){
-              if(contadorVerde<255){
-                contadorVerde = contadorVerde+1;
-                cambiarColor(pwm3,contadorVerde,pwm1);
+              if(pwm2<255){
+                pwm2++;
+                cambiarColor(pwm3,pwm2,pwm1);
               }
             } else if (header.indexOf("GET /verde/menos") >= 0){
-              if(contadorVerde>0){
-                contadorVerde = contadorVerde-1;
-                cambiarColor(pwm3,contadorVerde,pwm1);
+              if(pwm2>0){
+                pwm2--;
+                cambiarColor(pwm3,pwm2,pwm1);
               }
             } else if(header.indexOf("GET /rojo/mas") >= 0){
-              if(contadorRojo<255){
-                contadorRojo = contadorRojo+1;
-                cambiarColor(contadorRojo,pwm2,pwm1);
+              if(pwm3<255){
+                pwm3++;
+                cambiarColor(pwm3,pwm2,pwm1);
               }
             } else if (header.indexOf("GET /rojo/menos") >= 0){
-              if(contadorRojo>0){
-                contadorRojo = contadorRojo-1;
-                cambiarColor(contadorRojo,pwm2,pwm1);
+              if(pwm3>0){
+                pwm3--;
+                cambiarColor(pwm3,pwm2,pwm1);
               }
             }
             
             // Página web
             client.println("<!DOCTYPE html><html><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><link rel=\"icon\" href=\"data:,\"><style>button{background-color: rgb(142, 0, 185);border-radius: 8px;border: 1px #979797;color: #fff;}</style></head>");
             client.println("<body style='margin: 3% 10%; font-family: sans-serif; background-color: #ff6c9d41;'><div><h1 style='color: #CC00CC'>Lab 4: ESP32 como Servidor WEB en modo Access Point</h1></div>");
-            client.println("<p><ul><li>Direccion IP: "+direccionIP+"</li><br><li>Potencia de la señal: "+potencia+"</li><br><li>Integrantes:<ul><li>Micaela Abigail Gordillo Alcocer</li><li>Elizabeth Naomi Tacachira Beltran</li></ul></li></ul></p>");
+            client.print("<p><ul><li>Direccion IP: ");
+            client.print(WiFi.softAPIP());
+            client.print("</li><br><li>Potencia de la señal: ");
+            client.print(WiFi.RSSI());
+            client.println("</li><br><li>Integrantes:<ul><li>Micaela Abigail Gordillo Alcocer</li><li>Elizabeth Naomi Tacachira Beltran</li></ul></li></ul></p>");
             client.println("<div style='grid-column-start: 1; grid-column-end: 4;'><center><p>Contador: </p>");
             client.println("<a href=\"/contador/menos\"><button class=\"button\">-</button></a>"+String(contador));
             client.println("<a href=\"/contador/mas\"><button class=\"button\">+</button></a>");
@@ -230,13 +224,13 @@ void loop(){
               client.println("<p><a href=\"/23/off\"><button class=\"button button2\">OFF</button></a></p>");
             }		
             client.println("</div><div style='grid-column-start: 1; grid-column-end: 4;'><p>Valores:</p></div><div>");
-            client.println("<a href=\"/azul/menos\"><button class=\"button\">-</button></a>"+String(contadorAzul));
+            client.println("<a href=\"/azul/menos\"><button class=\"button\">-</button></a>"+String(pwm1));
             client.println("<a href=\"/azul/mas\"><button class=\"button\">+</button></a>");
             client.println("</div><div>");
-            client.println("<a href=\"/verde/menos\"><button class=\"button\">-</button></a>"+String(contadorVerde));
+            client.println("<a href=\"/verde/menos\"><button class=\"button\">-</button></a>"+String(pwm2));
             client.println("<a href=\"/verde/mas\"><button class=\"button\">+</button></a>");
             client.println("</div><div>");
-            client.println("<a href=\"/rojo/menos\"><button class=\"button\">-</button></a>"+String(contadorRojo));
+            client.println("<a href=\"/rojo/menos\"><button class=\"button\">-</button></a>"+String(pwm3));
             client.println("<a href=\"/rojo/mas\"><button class=\"button\">+</button></a>");
             client.print("</div></div><hr><center><div><h2><strong>ADC</strong></h2>Valor: "); 
             client.print(potValue);
