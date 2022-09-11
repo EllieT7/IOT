@@ -31,9 +31,21 @@ String VERDEState = "off";
 const int AZUL = 21;
 const int ROJO = 22;
 const int VERDE = 23;
-// Contador 
-int contador = 0;
+// Contadores
+int contador = 255;
+int contadorAzul = 255;
+int contadorVerde = 255;
+int contadorRojo = 255;
 int aux = 0;
+int aux2 = 0;
+
+//---------------------------------------------------------------
+// Potenciometro en el GPIO 32 (Analog ADC1_CH0) 
+const int potPin = 32; //ADC0 es el pin 32 -- Canal q vamos a usar
+// Variable para asignar la lectura
+int potValue = 0;
+//---------------------------------------------------------------
+
 void setup() {
   Serial.begin(115200);
   configPWM(); //Configurando PWM 
@@ -41,14 +53,17 @@ void setup() {
   server.begin();
   SerialBT.begin("NaoMica"); //Bluetooth nombre dispositivo
   Serial.println("Dispositivo ESPBluetooth iniciado");
+  delay(1000);
 }
+
 void loop(){
   //Configuracion canal pwm
   ledcWrite(PWM1_Ch, pwm1);
   ledcWrite(PWM2_Ch, pwm2);
   ledcWrite(PWM3_Ch, pwm3);
  
-  //Bluetooth
+  //---------------------------------------------------------------------------
+  //Puerto serial
   if (Serial.available()){
     String mensaje = Serial.readStringUntil('\n');
     //SerialBT.write(Serial.read()); 
@@ -64,54 +79,34 @@ void loop(){
       int g = split(mensaje,' ',1).toInt();
       int b = split(mensaje,' ',2).toInt();
       cambiarColor(r,g,b);
+      contadorRojo = r;
+      contadorVerde = g;
+      contadorAzul = b;
       Serial.println("Se configuro "+mensaje);
     }
   }
+  //---------------------------------------------------------------------------
+  //Bluetooth
   if (SerialBT.available()){
     String command = "";
     command = SerialBT.readStringUntil('\n'); // Obteniendo string del Bluetooth
     Serial.println("Mensaje recibido BT: " + command);
+    SerialBT.println("Comando rgb");
     // LED 1
-    if (command.indexOf("azul on")>=0){
-      SerialBT.println("GPIO 21 on");
-      AZULState = "on";
-      //digitalWrite(AZUL, HIGH);
-      cambiarColor(pwm3,pwm2,255);
-      contador++;
-    } else if (command.indexOf("azul off")>=0){
-      SerialBT.println("GPIO 21 off");
-      AZULState = "off";
-      //digitalWrite(AZUL, LOW);
-      cambiarColor(pwm3,pwm2,0);
-      contador++;
-    } else if (command.indexOf("verde on")>=0){
-      SerialBT.println("GPIO 22 on");
-      VERDEState = "on";
-      //digitalWrite(VERDE, HIGH);
-      cambiarColor(pwm3,255,pwm1);
-      contador++;
-    } else if (command.indexOf("verde off")>=0){
-      SerialBT.println("GPIO 22 off");
-      VERDEState = "off";
-      //digitalWrite(VERDE, LOW);
-      cambiarColor(pwm3,0,pwm1);
-      contador--;
-    } else if (command.indexOf("rojo on")>=0){
-      SerialBT.println("GPIO 23 on");
-      ROJOState = "on";
-      //digitalWrite(ROJO, HIGH);
-      cambiarColor(255,pwm2,pwm1);
-      contador++;
-    } else if (command.indexOf("rojo off")>=0){
-      SerialBT.println("GPIO 23 off");
-      ROJOState = "off";
-      //digitalWrite(ROJO, LOW);
-      cambiarColor(0,pwm2,pwm1);
-      contador--;
+    if (command.indexOf("rgb")>=0 && aux2 == 0){
+      SerialBT.println("Ingrese los valores rgb (ej: 97 97 97)");
+      aux2 = 1;
     } else {
-      SerialBT.println("Comando no reconocido");
+      aux2 = 0;      
+      int r = split(command,' ',0).toInt();
+      int g = split(command,' ',1).toInt();
+      int b = split(command,' ',2).toInt();
+      cambiarColor(r,g,b);
+      contadorRojo = r;
+      contadorVerde = g;
+      contadorAzul = b;
+      SerialBT.println("Se configuro "+command);
     }
-  Serial.println("Contador: "+String(contador));
   }
   delay(20);
   //---------------------------------------------------------------------------
@@ -138,45 +133,75 @@ void loop(){
             if (header.indexOf("GET /21/on") >= 0) {
               Serial.println("GPIO 21 on");
               AZULState = "on";
-              //digitalWrite(AZUL, HIGH);
-              cambiarColor(pwm3,pwm2,255);
-              contador++;
+              cambiarColor(pwm3,pwm2,contadorAzul);
             } else if (header.indexOf("GET /21/off") >= 0) {
               Serial.println("GPIO 21 off");
               AZULState = "off";
-              //digitalWrite(AZUL, LOW);
               cambiarColor(pwm3,pwm2,0);
-              contador--;
             } else if (header.indexOf("GET /22/on") >= 0) {
               Serial.println("GPIO 22 on");
               VERDEState = "on";
-              //digitalWrite(VERDE, HIGH);
-              cambiarColor(pwm3,255,pwm1);
-              contador++;
+              cambiarColor(pwm3,contadorVerde,pwm1);
             } else if (header.indexOf("GET /22/off") >= 0) {
               Serial.println("GPIO 22 off");
               VERDEState = "off";
-              //digitalWrite(VERDE, LOW);
               cambiarColor(pwm3,0,pwm1);
-              contador--;
             }  else if (header.indexOf("GET /23/on") >= 0) {
               Serial.println("GPIO 23 on");
               ROJOState = "on";
-              //digitalWrite(ROJO, HIGH);
-              cambiarColor(255,pwm2,pwm1);
-              contador++;
+              cambiarColor(contadorRojo,pwm2,pwm1);
             } else if (header.indexOf("GET /23/off") >= 0) {
               Serial.println("GPIO 23 off");
               ROJOState = "off";
-              //digitalWrite(ROJO, LOW);
               cambiarColor(0,pwm2,pwm1);
-              contador--;
+            } else if(header.indexOf("GET /contador/mas") >= 0){
+              if(contador<255){
+                contador = contador+1;
+              }
+            } else if (header.indexOf("GET /contador/menos") >= 0){
+              if(contador>0){
+                contador = contador-1;
+              }
+            } else if(header.indexOf("GET /azul/mas") >= 0){
+              if(contadorAzul<255){
+                contadorAzul = contadorAzul+1;
+                cambiarColor(pwm3,pwm2,contadorAzul);
+              }
+            } else if (header.indexOf("GET /azul/menos") >= 0){
+              if(contadorAzul>0){
+                contadorAzul = contadorAzul-1;
+                cambiarColor(pwm3,pwm2,contadorAzul);
+              }
+            } else if(header.indexOf("GET /verde/mas") >= 0){
+              if(contadorVerde<255){
+                contadorVerde = contadorVerde+1;
+                cambiarColor(pwm3,contadorVerde,pwm1);
+              }
+            } else if (header.indexOf("GET /verde/menos") >= 0){
+              if(contadorVerde>0){
+                contadorVerde = contadorVerde-1;
+                cambiarColor(pwm3,contadorVerde,pwm1);
+              }
+            } else if(header.indexOf("GET /rojo/mas") >= 0){
+              if(contadorRojo<255){
+                contadorRojo = contadorRojo+1;
+                cambiarColor(contadorRojo,pwm2,pwm1);
+              }
+            } else if (header.indexOf("GET /rojo/menos") >= 0){
+              if(contadorRojo>0){
+                contadorRojo = contadorRojo-1;
+                cambiarColor(contadorRojo,pwm2,pwm1);
+              }
             }
-
+            
             // Página web
             client.println("<!DOCTYPE html><html><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><link rel=\"icon\" href=\"data:,\"></head>");
-            client.println("<body><div><h1>ESP32 Servidor WEB</h1></div><div><h2>LED 1</h2></div>");
-            client.println("<div style='display: grid; grid-template-columns: repeat(3, 1fr); margin: 3% 30%; text-align: center;'>");
+            client.println("<body style='margin: 3% 10%;'><div><h1>Lab 4: ESP32 como Servidor WEB en modo Access Point</h1></div>");
+            client.println("<div style='grid-column-start: 1; grid-column-end: 4;'><center><p>Contador: </p>");
+            client.println("<a href=\"/contador/menos\"><button class=\"button\">-</button></a>"+String(contador));
+            client.println("<a href=\"/contador/mas\"><button class=\"button\">+</button></a>");
+            client.println("</center></div><div style='display: grid; grid-template-columns: repeat(3, 1fr); margin: 3% 30%; text-align: center;'>");
+            client.println("<div style='grid-column-start: 1; grid-column-end: 4;'><h2>LED | Controladores</h2></div>");
             client.println("<div><p>AZUL - State " + AZULState + "</p></div>");
             client.println("<div><p>VERDE - State " + VERDEState + "</p></div>");
             client.println("<div><p>ROJO - State " + ROJOState + "</p></div>"); 
@@ -198,8 +223,16 @@ void loop(){
             } else {
               client.println("<p><a href=\"/23/off\"><button class=\"button button2\">OFF</button></a></p>");
             }		
-            client.println("</div></div><div><h2>Contador: "+String(contador)+"</h2></div>");
-            client.println("</body></html>");          
+            client.println("</div><div style='grid-column-start: 1; grid-column-end: 4;'><p>Valores:</p></div><div>");
+            client.println("<a href=\"/azul/menos\"><button class=\"button\">-</button></a>"+String(contadorAzul));
+            client.println("<a href=\"/azul/mas\"><button class=\"button\">+</button></a>");
+            client.println("</div><div>");
+            client.println("<a href=\"/verde/menos\"><button class=\"button\">-</button></a>"+String(contadorVerde));
+            client.println("<a href=\"/verde/mas\"><button class=\"button\">+</button></a>");
+            client.println("</div><div>");
+            client.println("<a href=\"/rojo/menos\"><button class=\"button\">-</button></a>"+String(contadorRojo));
+            client.println("<a href=\"/rojo/mas\"><button class=\"button\">+</button></a>");
+            client.println("</div></div></body></html>");          
             // La respuesta HTTP termina con otra línea en blanco
             client.println();
             // Salir del bucle while
@@ -219,8 +252,18 @@ void loop(){
     Serial.println("Client disconnected.");
     Serial.println("");
   }
+
+  //---------------------------------------------------------------------------------------------
+  // ADC
+  // Leyendo valores del ADC
+  potValue = analogRead(potPin);
+  Serial.println(potValue);
+  delay(50); // Darle tiempo para ejecutar la seria
 }
 
+
+//-----------------------------------------------------------------------------------------------
+// Funciones
 void configPWM(){
   ledcAttachPin(AZUL, PWM1_Ch);
   ledcSetup(PWM1_Ch, PWM1_Freq, PWM1_Res);
@@ -236,7 +279,6 @@ String split(String data, char separator, int index){
   int found = 0;
   int strIndex[] = {0, -1};
   int maxIndex = data.length()-1;
-
   for(int i=0; i<=maxIndex && found<=index; i++){
     if(data.charAt(i)==separator || i==maxIndex){
         found++;
@@ -244,7 +286,6 @@ String split(String data, char separator, int index){
         strIndex[1] = (i == maxIndex) ? i+1 : i;
     }
   }
-
   return found>index ? data.substring(strIndex[0], strIndex[1]) : "";
 }
 
@@ -255,13 +296,11 @@ void cambiarColor(int r, int g, int b){
     }else{
       ROJOState = "off";
     }
-
     if(g>0){
       VERDEState = "on";
     }else{
       VERDEState = "off";
     }
-
     if(b>0){
       AZULState = "on";
     }else{
@@ -273,7 +312,4 @@ void cambiarColor(int r, int g, int b){
   }else{
     Serial.println("Intente nuevamente");
   }
- 
-  
-
 }

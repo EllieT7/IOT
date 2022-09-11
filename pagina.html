@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html> 
+<head>
+    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"> 
+    <link rel=\"icon\" href=\"data:,\"> 
+</head>
+<body style='margin: 3% 10%;'>
+    <div><h1>Lab 4: ESP32 como Servidor WEB en modo Access Point</h1></div>
+    <div style='grid-column-start: 1; grid-column-end: 4;'><center>
+        <p>Contador: </p>
+        <a href=\"/contador/mas\"><button class=\"button\">-</button></a>
+        0
+        <a href=\"/contador/menos\"><button class=\"button\">+</button></a>
+    </center></div>
+    <div style='display: grid; grid-template-columns: repeat(3, 1fr); margin: 3% 30%; text-align: center;'>
+        <div style="grid-column-start: 1; grid-column-end: 4;"><h2>LED | Controladores</h2></div>
+        <div><p>AZUL - State </p></div> 
+        <div><p>VERDE - State </p></div>
+        <div><p>ROJO - State </p></div>
+        <div style='display: grid; grid-template-columns: repeat(2, 1fr);'>
+            <p><a href=\"/21/on\"><button class=\"button\">ON</button></a></p> 
+            <p><a href=\"/21/off\"><button class=\"button button2\">OFF</button></a></p> 
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(2, 1fr);">
+            <p><a href=\"/22/on\"><button class=\"button\">ON</button></a></p> 
+            <p><a href=\"/22/off\"><button class=\"button button2\">OFF</button></a></p> 
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(2, 1fr);">
+            <p><a href=\"/23/on\"><button class=\"button\">ON</button></a></p>
+            <p><a href=\"/23/off\"><button class=\"button button2\">OFF</button></a></p>
+        </div>
+        <div style="grid-column-start: 1; grid-column-end: 4;"><p>Valores:</p></div>
+        <div>
+            <a href=\"/azul/mas\"><button class=\"button\">-</button></a>
+            255
+            <a href=\"/azul/menos\"><button class=\"button\">+</button></a>
+        </div>
+        <div>
+            <a href=\"/verde/mas\"><button class=\"button\">-</button></a>
+            255
+            <a href=\"/verde/menos\"><button class=\"button\">+</button></a>
+        </div>
+        <div>
+            <a href=\"/rojo/mas\"><button class=\"button\">-</button></a>
+            255
+            <a href=\"/rojo/menos\"><button class=\"button\">+</button></a>
+        </div>
+    </div>
+</body>
+</html>  
