@@ -18,7 +18,6 @@ BluetoothSerial SerialBT;
 #define PWM3_Res   8
 #define PWM3_Freq  1000
 int pwm1=0,pwm2=0,pwm3=0;
-bool modoRGB = false;
 
 
 // Variable to store the HTTP request
@@ -27,7 +26,7 @@ String header; // Cabecera tipo String
 String AZULState = "off";
 String ROJOState = "off";
 String VERDEState = "off";
-// Asignando los piones GPIO, para los tres pines
+// Asignando los pines GPIO, para los tres pines
 const int AZUL = 21;
 const int ROJO = 22;
 const int VERDE = 23;
@@ -35,8 +34,6 @@ const int VERDE = 23;
 int contador = 255;
 int aux = 0;
 int aux2 = 0;
-IPAddress direccionIP;
-String potencia="";
 //---------------------------------------------------------------
 // Potenciometro en el GPIO 32 (Analog ADC1_CH0) 
 const int potPin = 32; //ADC0 es el pin 32 -- Canal q vamos a usar
@@ -46,8 +43,8 @@ int potValue = 0;
 
 void setup() {
   Serial.begin(115200);
-  configPWM(); //Configurando PWM 
-  ConnectWiFi_AP();
+  configPWM();              //Configurando PWM 
+  ConnectWiFi_AP();         //Iniciando como access point
   server.begin();
   SerialBT.begin("NaoMica"); //Bluetooth nombre dispositivo
   Serial.println("Dispositivo ESPBluetooth iniciado");
@@ -69,7 +66,6 @@ void loop(){
     Serial.println(mensaje);
     if(mensaje=="rgb" && aux==0){
       aux = 1;
-      modoRGB = true;
       Serial.println("Ingrese los valores rgb (ej: 97 97 97)");
     }else{
       aux=0;      
@@ -77,14 +73,13 @@ void loop(){
       int g = split(mensaje,' ',1).toInt();
       int b = split(mensaje,' ',2).toInt();
       cambiarColor(r,g,b);
-      Serial.println("Se configuro "+mensaje);
+      Serial.println("Se configuró "+mensaje);
     }
   }
   //---------------------------------------------------------------------------
   //Bluetooth
   if (SerialBT.available()){
-    String command = "";
-    command = SerialBT.readStringUntil('\n'); // Obteniendo string del Bluetooth
+    String command = SerialBT.readStringUntil('\n'); // Obteniendo string del Bluetooth
     Serial.println("Mensaje recibido BT: " + command);
     SerialBT.println("Comando rgb");
     // LED 1
@@ -97,10 +92,11 @@ void loop(){
       int g = split(command,' ',1).toInt();
       int b = split(command,' ',2).toInt();
       cambiarColor(r,g,b);
-      SerialBT.println("Se configuro "+command);
+      SerialBT.println("Se configuró "+command);
     }
   }
   delay(20);
+  
   //---------------------------------------------------------------------------
   //Página web
   WiFiClient client = server.available();   // Escuchar a las clientes entrantes
@@ -112,19 +108,13 @@ void loop(){
         char c = client.read();             // lee un byte, luego
         Serial.write(c);                    // imprimirlo en el monitor serial
         header += c;
-        if (c == '\n') {                    // si el byte es un carácter de nueva línea                                 // si la línea actual está en blanco, tienes dos caracteres de nueva línea seguidos.                                        // ese es el final de la solicitud HTTP del cliente, así que envíe una respuesta:
+        if (c == '\n') {                    // si el byte es un carácter de nueva línea                                 
           if (currentLine.length() == 0) {
-                                            // Los encabezados HTTP siempre comienzan con un código de respuesta (por ejemplo, HTTP/1.1 200 OK)
-                                            // y un tipo de contenido para que el cliente sepa lo que viene, luego una línea en blanco:
             client.println("HTTP/1.1 200 OK");
             client.println("Content-type:text/html");
             client.println("Connection: close");
             client.println();
             // Cambiando estado de los GPIO
-            //Serial.println("Header " + header);
-            //direccionIP = header.substring(0, header.indexOf('/'));
-            Serial.println("Direccion "+ direccionIP);
-            // LED 1
             if (header.indexOf("GET /21/on") >= 0) {
               Serial.println("GPIO 21 on");
               AZULState = "on";
@@ -188,6 +178,17 @@ void loop(){
                 cambiarColor(pwm3,pwm2,pwm1);
               }
             }
+
+            //Escaneando redes
+            int n=WiFi.scanNetworks();
+            int valorPotencia = 0;
+            for(int i=0; i<n;i++){
+              if(WiFi.SSID(i)=="MAGA"){
+                Serial.println(WiFi.RSSI(i));
+                valorPotencia = i;
+                break;
+              }
+            }
             
             // Página web
             client.println("<!DOCTYPE html><html><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><link rel=\"icon\" href=\"data:,\"><style>button{background-color: rgb(142, 0, 185);border-radius: 8px;border: 1px #979797;color: #fff;}</style></head>");
@@ -195,7 +196,7 @@ void loop(){
             client.print("<p><ul><li>Direccion IP: ");
             client.print(WiFi.softAPIP());
             client.print("</li><br><li>Potencia de la señal: ");
-            client.print(WiFi.RSSI());
+            client.print(WiFi.RSSI(valorPotencia));
             client.println("</li><br><li>Integrantes:<ul><li>Micaela Abigail Gordillo Alcocer</li><li>Elizabeth Naomi Tacachira Beltran</li></ul></li></ul></p>");
             client.println("<div style='grid-column-start: 1; grid-column-end: 4;'><center><p>Contador: </p>");
             client.println("<a href=\"/contador/menos\"><button class=\"button\">-</button></a>"+String(contador));
@@ -255,12 +256,11 @@ void loop(){
     Serial.println("");
   }
 
-  //---------------------------------------------------------------------------------------------
-  // ADC
-  // Leyendo valores del ADC
-  potValue = analogRead(potPin);
-  //Serial.println(potValue);
-  delay(50); // Darle tiempo para ejecutar la seria
+    //---------------------------------------------------------------------------------------------
+    // ADC
+    // Leyendo valores del ADC
+    potValue = analogRead(potPin);
+    delay(50); // Darle tiempo para ejecutar la seria
 }
 
 

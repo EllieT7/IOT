@@ -16,7 +16,6 @@ void ConnectWiFi_STA(bool useStaticIP = false)
    Serial.println(ssid);
    Serial.print("IP address:\t");
    Serial.println(WiFi.localIP());
-  // ip = WiFi.localIP()+"";
 }
 
 void ConnectWiFi_AP(bool useStaticIP = false)
@@ -28,12 +27,9 @@ void ConnectWiFi_AP(bool useStaticIP = false)
      Serial.println(".");
      delay(100);
    }
-   //if(useStaticIP) WiFi.softAPConfig(ip, gateway, subnet);
-
    Serial.println("");
    Serial.print("Iniciado AP:\t");
    Serial.println(ssid);
    Serial.print("IP address:\t");
    Serial.println(WiFi.softAPIP());
-   //ip = WiFi.softAPIP()+"";
 }
